@@ -1,8 +1,8 @@
 # tmux-popup-pane-manager.sh
 Menu driven tmux pane activities using tmux's display-popup command
- - resize active pane 1 or 5 lines, or a percentage of the window
- - selection active pane
- - toogle syncronizing of panes
- - cycles through layout selection
- - splits virtically and horizontally
- - kill/closes windows
+ - resize interactively the active pane 1 or 5 lines, or a percentage of the window (hjkl - 1 line at time, HJKL - 1 line at time - 1-9 10-90% of the screen
+ - selection of active pane (n - next p - previous )
+ - toogle syncronizing of panes (S)
+ - cycles through the 5 layout selections (N P)
+ - splits virtically and horizontally (v | or s |)
+ - kill/closes windows (X)
