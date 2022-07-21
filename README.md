@@ -7,5 +7,5 @@ Menu driven tmux pane activities using tmux's display-popup command
  - selection of active pane (n - next p - previous )
  - toggle syncronizing of panes (S)
  - cycles through the 5 layout selections (N P)
- - splits virtically and horizontally (v | or s |)
+ - splits virtically and horizontally (v | or s -)
  - kill/closes windows (X)
