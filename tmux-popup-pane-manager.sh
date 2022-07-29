@@ -9,7 +9,7 @@
 [ -z $TMUX ] && echo "NOTE: needs to be run inside a tmux sessions" && exit 1
 
 realpath="$(realpath $0)"
-[ "$1" != "--no-popup" ] && tmux popup -E -T "──────────  Pane Manager ─────" -w 38 -h 22 "$realpath --no-popup" && exit
+[ "$1" != "--no-popup" ] && tmux popup -E -T "────────── Pane Manager ─────" -w 38 -h 22 "$realpath --no-popup" && exit
 
 display_menu() {
 	clear
