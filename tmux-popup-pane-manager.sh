@@ -9,36 +9,55 @@
 [ -z $TMUX ] && echo "NOTE: needs to be run inside a tmux sessions" && exit 1
 
 realpath="$(realpath $0)"
-[ "$1" != "--no-popup" ] && tmux popup -E -T "────────── Pane Manager ─────" -w 38 -h 22 "$realpath --no-popup" && exit
+[ "$1" != "--no-popup" ] && tmux popup -E -T "────────── Pane Manager ─────" -w 38 -h 36 "$realpath --no-popup" && exit
 
+pane_border_status="off"
 display_menu() {
 	clear
+    tmux list-windows | grep active | awk '{print $2}' | tail -c2 | grep -q Z && zoom_status="on" || zoom_status="off"
     tmux show-options -w | grep -q 'synchronize-panes.*on' && synchronize_panes="on" || synchronize_panes="off"
+    tmux show-options -w | grep -q 'pane-border-status.*top'    && pane_border_status="top"
+    tmux show-options -w | grep -q 'pane-border-status.*bottom' && pane_border_status="bottom"
 	printf "
-   hjkl      resize x5
-   HJKL      resize x1
-   1 - 9     resize | x 10%%
-   ! - )     resize ─ x 10%%
-   = +       resize equally | -
-   z         zoom
+ Resize
+
+   hjkl       x 5
+   HJKL       x 1
+   1 - 9      | x 10%%
+   ! - )      ─ x 10%%
+   = +        equally | -
+
+ Split
+
+   s -       spilt -
+   v |       spilt |
+	   
+ Navigation
 
    n p       next/prev pane
    N P       next/prev layout
    u d       swap pane up/down
 
-   s -       spilt -
-   v |       spilt |
-	   
-   S         sync toggle [ %s ]
-   X         kill
+ Toggles 
 
-         Esc - (e)xit " $synchronize_panes
+   b         border [ %s ]
+   S         syncronize [ %s ]
+   z         zoom [ %s ]
+
+ Misc
+
+   t         name pane
+   X         kill (no confirm!)
+   e         exit" $pane_border_status $synchronize_panes $zoom_status
 }
 display_menu
 
 # https://www.reddit.com/r/tmux/comments/g9nr01/how_to_show_message_or_effect_when/
 # Uncomment this setting if want status of pane sync on the status bar
-# set -ag status-right '#{?pane_synchronized, #[fg=red]IN_SYNC#[default],}'
+tmux set -ag status-right '#{?pane_synchronized, #[fg=red]IN_SYNC#[default],}'
+
+# https://www.reddit.com/r/tmux/comments/dfj5ye/rename_pane_not_window_is_there_a_builtin/
+tmux set -g pane-border-format " [ ###P #T ] "
 
 while [ true ]; do
 
@@ -94,14 +113,23 @@ while [ true ]; do
     [ "$c" = "u" ] && tmux swap-pane -U
     [ "$c" = "d" ] && tmux swap-pane -D
 
+    # Toggles
+
     # Syncronize pane
     [ "$c" = "S" ] && tmux setw synchronize-pane && display_menu
+    # border status
+    [ "$c" = "b" ] && [ "$pane_border_status" = "off" ]    && tmux set pane-border-status     && display_menu && continue
+    [ "$c" = "b" ] && [ "$pane_border_status" = "top" ]    && tmux set pane-border-status bottom && display_menu && continue
+    [ "$c" = "b" ] && [ "$pane_border_status" = "bottom" ] && tmux set pane-border-status off && pane_border_status="off" && display_menu && continue
 
     # Split panes
     [ "$c" = "s" ] || [ "$c" = "-" ] && tmux split -v
     [ "$c" = "v" ] || [ "$c" = "|" ] && tmux split -h
+
+    # 
     [ "$c" = "X" ] && tmux kill-pane
-    [ "$c" = "e" ] || [ "$c" = $'\e' ] && exit
-    [ "$c" = "z" ] && tmux resize-pane -Z
+    [ "$c" = "e" ] && exit
+    [ "$c" = "z" ] && tmux resize-pane -Z && display_menu
+    [ "$c" = "t" ] && printf "\n\n pane name: " && read pane_name && tmux select-pane -T "$pane_name" && display_menu
 
 done
