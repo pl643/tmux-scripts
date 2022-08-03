@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 # tmux-popup-pane-manager.sh - menu driven tmux pane activities
 # github repo: https://github.com/pl643/tmux-scripts
-#   resize, selection, syncronize, layout, splits, kill
+#   resize, selection, syncronize, layout, splits, kill, break
 
 # sample tmux.conf binding:
 #    bind-key -m      M-p tmux-popup-pane-manager.sh
@@ -9,7 +9,7 @@
 [ -z $TMUX ] && echo "NOTE: needs to be run inside a tmux sessions" && exit 1
 
 realpath="$(realpath $0)"
-[ "$1" != "--no-popup" ] && tmux popup -E -T "────────── Pane Manager ─────" -w 38 -h 36 "$realpath --no-popup" && exit
+[ "$1" != "--no-popup" ] && tmux popup -E -T "────────── Pane Manager ─────" -w 50 -h 34 "$realpath --no-popup" && exit
 
 pane_border_status="off"
 display_menu() {
@@ -21,16 +21,13 @@ display_menu() {
 	printf "
  Resize
 
-   hjkl       x 5
-   HJKL       x 1
-   1 - 9      | x 10%%
-   ! - )      ─ x 10%%
-   = +        equally | -
+  hjkl    x 5            HJKL    x 1
+  1 - 9   | x 10%%        ! - )   ─ x 10%%
+  = +     equally | -
 
  Split
 
-   s -       spilt -
-   v |       spilt |
+   s -    spilt -        v |       spilt |
 	   
  Navigation
 
@@ -46,11 +43,22 @@ display_menu() {
 
  Misc
 
-   t         name pane
+   B         break (make pane into window)
+   o         join this pane to window
+   D         send C-d
+   t         rename pane
    X         kill (no confirm!)
    e         exit" $pane_border_status $synchronize_panes $zoom_status
 }
 display_menu
+
+trap ctrl_c INT
+
+function ctrl_c() {
+    echo exiting
+    MAXNUMLOOP=20
+    exit
+}
 
 # https://www.reddit.com/r/tmux/comments/g9nr01/how_to_show_message_or_effect_when/
 # Uncomment this setting if want status of pane sync on the status bar
@@ -59,7 +67,12 @@ tmux set -ag status-right '#{?pane_synchronized, #[fg=red]IN_SYNC#[default],}'
 # https://www.reddit.com/r/tmux/comments/dfj5ye/rename_pane_not_window_is_there_a_builtin/
 tmux set -g pane-border-format " [ ###P #T ] "
 
-while [ true ]; do
+# If C-c is press in the while [ true ] loop, a run runaway process occurs, limiting 
+#   it to 20 will cause the loop to exit after 20 loops.  Modify MAXNUMLOOP if you 
+#   need more keys presses.
+MAXNUMLOOP=20
+COUNTER=0
+while [ $COUNTER -lt $MAXNUMLOOP ]; do
 
     read -sn1 c
 
@@ -113,23 +126,27 @@ while [ true ]; do
     [ "$c" = "u" ] && tmux swap-pane -U
     [ "$c" = "d" ] && tmux swap-pane -D
 
-    # Toggles
-
     # Syncronize pane
     [ "$c" = "S" ] && tmux setw synchronize-pane && display_menu
-    # border status
+
+    # border status ( 3 toggle off, top, bottom )
     [ "$c" = "b" ] && [ "$pane_border_status" = "off" ]    && tmux set pane-border-status     && display_menu && continue
     [ "$c" = "b" ] && [ "$pane_border_status" = "top" ]    && tmux set pane-border-status bottom && display_menu && continue
-    [ "$c" = "b" ] && [ "$pane_border_status" = "bottom" ] && tmux set pane-border-status off && pane_border_status="off" && display_menu && continue
+    [ "$c" = "b" ] && [ "$pane_border_status" = "bottom" ] && tmux set pane-border-status off \
+                   && pane_border_status="off" && display_menu && continue
 
     # Split panes
     [ "$c" = "s" ] || [ "$c" = "-" ] && tmux split -v
     [ "$c" = "v" ] || [ "$c" = "|" ] && tmux split -h
 
-    # 
+    # Misc
+    [ "$c" = "B" ] && tmux break-pane
+    [ "$c" = "o" ] && printf "\n\n join window: " && read window && tmux join-pane -t $window
     [ "$c" = "X" ] && tmux kill-pane
+    [ "$c" = "D" ] && tmux send-key C-d ; display_menu
     [ "$c" = "e" ] && exit
     [ "$c" = "z" ] && tmux resize-pane -Z && display_menu
     [ "$c" = "t" ] && printf "\n\n pane name: " && read pane_name && tmux select-pane -T "$pane_name" && display_menu
-
+    let COUNTER=COUNTER+1
+    echo $COUNTER > /tmp/counter
 done
