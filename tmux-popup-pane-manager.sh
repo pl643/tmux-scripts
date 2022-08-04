@@ -8,8 +8,14 @@
 
 [ -z $TMUX ] && echo "NOTE: needs to be run inside a tmux sessions" && exit 1
 
+run_after_popup="/tmp/.run_after_popup"
 realpath="$(realpath $0)"
-[ "$1" != "--no-popup" ] && tmux popup -E -T "────────── Pane Manager ─────" -w 50 -h 34 "$realpath --no-popup" && exit
+if [ "$1" != "--no-popup" ] ; then
+    tmux popup -E -T "────────────── Pane Manager ─────" -w 46 -h 35 "$realpath --no-popup" 
+
+    [ -f "$run_after_popup" ] && bash "$run_after_popup" && rm "$run_after_popup"
+    exit 0
+fi
 
 pane_border_status="off"
 display_menu() {
@@ -23,7 +29,7 @@ display_menu() {
 
   hjkl    x 5            HJKL    x 1
   1 - 9   | x 10%%        ! - )   ─ x 10%%
-  = +     equally | -
+  =       equally |      +       equally ─
 
  Split
 
@@ -46,19 +52,12 @@ display_menu() {
    B         break (make pane into window)
    o         join this pane to window
    D         send C-d
+   q         display panes / exit
    t         rename pane
    X         kill (no confirm!)
    e         exit" $pane_border_status $synchronize_panes $zoom_status
 }
 display_menu
-
-trap ctrl_c INT
-
-function ctrl_c() {
-    echo exiting
-    MAXNUMLOOP=20
-    exit
-}
 
 # https://www.reddit.com/r/tmux/comments/g9nr01/how_to_show_message_or_effect_when/
 # Uncomment this setting if want status of pane sync on the status bar
@@ -74,7 +73,7 @@ MAXNUMLOOP=20
 COUNTER=0
 while [ $COUNTER -lt $MAXNUMLOOP ]; do
 
-    read -sn1 c
+    read -sn1 c || exit
 
     # Resize x 1
     [ "$c" = "H" ] && tmux resize-pane -L 1
@@ -145,8 +144,8 @@ while [ $COUNTER -lt $MAXNUMLOOP ]; do
     [ "$c" = "X" ] && tmux kill-pane
     [ "$c" = "D" ] && tmux send-key C-d ; display_menu
     [ "$c" = "e" ] && exit
+    [ "$c" = "q" ] && echo tmux display-panes  > "$run_after_popup" && exit
     [ "$c" = "z" ] && tmux resize-pane -Z && display_menu
     [ "$c" = "t" ] && printf "\n\n pane name: " && read pane_name && tmux select-pane -T "$pane_name" && display_menu
     let COUNTER=COUNTER+1
-    echo $COUNTER > /tmp/counter
 done
