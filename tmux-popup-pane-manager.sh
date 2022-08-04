@@ -4,7 +4,7 @@
 #   resize, selection, syncronize, layout, splits, kill, break
 
 # sample tmux.conf binding:
-#    bind-key -m      M-p tmux-popup-pane-manager.sh
+#    bind-key -n      M-p tmux-popup-pane-manager.sh
 
 [ -z $TMUX ] && echo "NOTE: needs to be run inside a tmux sessions" && exit 1
 
@@ -69,7 +69,7 @@ tmux set -g pane-border-format " [ ###P #T ] "
 # If C-c is press in the while [ true ] loop, a run runaway process occurs, limiting 
 #   it to 20 will cause the loop to exit after 20 loops.  Modify MAXNUMLOOP if you 
 #   need more keys presses.
-MAXNUMLOOP=20
+MAXNUMLOOP=100
 COUNTER=0
 while [ $COUNTER -lt $MAXNUMLOOP ]; do
 
@@ -117,7 +117,7 @@ while [ $COUNTER -lt $MAXNUMLOOP ]; do
     [ "$c" = "n" ] && tmux select-pane -t :.+
     [ "$c" = "p" ] && tmux select-pane -t :.-
 
-    # Pane selection even horizontal/vertical
+    # Pane layout selection even horizontal/vertical
     [ "$c" = "=" ] && tmux select-layout even-horizontal
     [ "$c" = "+" ] && tmux select-layout even-vertical
 
