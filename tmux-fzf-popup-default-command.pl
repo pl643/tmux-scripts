@@ -24,13 +24,6 @@ foreach(`tmux list-panes | cut -f 7 -d " "`) {
     }
 }
 
-# dump files and directories
-#foreach(`find ~ -type f -or -type d`) {
-#    !$lines{$_}++;
-#}
-
-$bash_prompt="$ENV{USER}\@$ENV{NAME}";
-
 # remove dupe words and store in %words_by_space
 foreach $line (keys %lines) {
     if ( $line =~ /^$bash_prompt.+?\s(\S.+)/ ) {
@@ -44,70 +37,59 @@ foreach $line (keys %lines) {
             s/^[^\p{PosixAlnum}]+//g;
             s/[^\p{PosixAlnum}]+$//g;
             next if /^\s*$/;
-            !$stripped{$_}++;
+            !$strip_symbol_words{$_}++;
         }
-        #print "space: $_\n";
     }
 }
 foreach (keys %words_by_space) {
     if(m!/!) {
         foreach(split /\//) {
             !$words_by_symbol{$_}++;
-            #print "/ $_\n";
         }
     }
     if(/-/) {
         foreach(split /-/) {
             !$words_by_symbol{$_}++;
-            #print "- $_\n";
         }
     }
     if(/_/) {
         foreach(split /_/) {
             !$words_by_symbol{$_}++;
-            #print "_ $_\n";
         }
     }
     if(/@/) {
         foreach(split /@/) {
             $words_by_symbol{$_}++;
-            #print " $_\n";
         }
     }
     if(/\./) {
         foreach(split /\./) {
             !$words_by_symbol{$_}++;
-            #print "+ $_\n";
         }
     }
     if(/\+/) {
         foreach(split /\+/) {
             !$words_by_symbol{$_}++;
-            #print "+ $_\n";
         }
     }
     if(/=/) {
         foreach(split /=/) {
             !$words_by_symbol{$_}++;
-            #print "= $_\n";
         }
     }
     if(/"/) {
         foreach(split /"/) {
             !$words_by_symbol{$_}++;
-            #print "\" $_\n";
         }
     }
     if(/\(/) {
         foreach(split /\(/) {
             !$words_by_symbol{$_}++;
-            #print "\" $_\n";
         }
     }
     if(/\)/) {
         foreach(split /\)/) {
             !$words_by_symbol{$_}++;
-            #print "\" $_\n";
         }
     }
 }
@@ -118,32 +100,23 @@ foreach (keys %words_by_symbol) {
         s/^[^\p{PosixAlnum}]+//g;
         s/[^\p{PosixAlnum}]+$//g;
         next if /^\s*$/;
-        !$stripped{$_}++;
+        !$strip_symbol_words{$_}++;
     }
 }
-#print "stripped:\n\n";
-foreach(keys %stripped) {
-    #print "$_\n"
+foreach(keys %strip_symbol_words) {
     !$ALL{$_}++
 }
-#print "words_by_symbol::::\n\n";
 foreach(keys %words_by_symbol) {
-    #print "$_\n"
     !$ALL{$_}++
 }
-#print "words_by_space:::::\n\n";
 foreach(keys %words_by_space) {
-    #print "$_\n"
     !$ALL{$_}++
 }
-#print "lines:::::\n\n";
 foreach(keys %lines) {
     chomp;
-    #print "$_\n"
     !$ALL{$_}++
 }
 foreach(keys %bash_commands) {
-    #print "$_\n"
     !$ALL{$_}++
 }
 
