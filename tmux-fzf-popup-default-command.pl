@@ -1,9 +1,11 @@
 #!/usr/bin/env perl
 
-# Grabs history of just panes in current window (Default)
+$epoc_start = time();
+
+# gets tmux history of just panes in current window (Default)
 $tmux_list_panes="tmux list-panes";
  
-## Grabs history of ALL panes, NOTE: this could take a long time
+# gets history of ALL panes, NOTE: this could take a long time
 #$tmux_list_panes="tmux list-panes -a";
 
 foreach(`tmux list-panes | cut -f 7 -d " "`) {
@@ -120,6 +122,29 @@ foreach(keys %bash_commands) {
     !$ALL{$_}++
 }
 
+$fdlocation=`which fd`;
+if ( -e "$fdlocation" ) {
+    print "db126: found fd\n";
+}
+if($exit_code=0) {
+    $lsfiles="fd";
+} else {
+    $lsfiles="find ~ -not -path '*/.*'"
+}
+foreach(`$lsfiles`) {
+    chomp;
+    !$ALL{$_}++;
+    $file_count++;
+}
+
 foreach(keys %ALL) {
     print "$_\n"
 }
+
+$epoc_stop = time();
+printf "lsfiles: %s\n", $lsfiles;
+printf "file count: %s\n", $file_count;
+printf "total time: %s\n", $epoc_stop - $epoc_start;
+printf "total lines: %d\n", scalar keys %ALL;
+my $output=`which fd`;
+print "db126: ec: $? output $output\n";
