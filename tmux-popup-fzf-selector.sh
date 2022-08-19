@@ -8,14 +8,14 @@ realpath="$(realpath $0)"
 # restart script in a popup
 if [ "$1" != "--no-popup" ]; then 
     #set -x
-    tmux popup -E -h 10 -T '─[ <Enter> paste+<Enter> ] [ A-c copy to buffer ] [ <C-e> edit ] [ <C-s> splits -_/= ]-' "$realpath --no-popup" 
+    tmux popup -E -h 10 -T '─[ <Enter> paste+<Enter> ] [ A-c copy to buffer ] [ <A-e> edit ] [ <C-s> splits -_/= ]-' "$realpath --no-popup" 
     tmp_file="/tmp/.fzf.edit"
     # for editing option
     # popup -T '─[ <Enter> accept edit and paste <q> - cancel ]-'
     # script to run after 
     if [ -f $tmp_file ]; then
         tmux popup -E -h 6 \
-            -T '─[ <Enter> paste+Enter <;p> paste <;q> - cancel ]-' \
+            -T '─[ <Enter> paste+Enter ] [ ;p  paste ] [ ;q cancel ]-' \
             nvim \
             -c 'inoremap <CR> <Esc>:x<cr>'  \
             -c 'nnoremap <CR> :x<cr>'  \
@@ -36,9 +36,9 @@ fzf_with_options() {
     pane_lines=${size% *}
     let fzf_height=$(($pane_lines - 1))
     echo ""
-    readarray -t lines < <(echo "$1" | fzf --height=$fzf_height --expect alt-c --expect alt-f --expect alt-v --expect alt-e --expect ctrl-s)
+    readarray -t lines < <(echo "$1" | fzf --height=$fzf_height --expect alt-c --expect alt-f --expect alt-v --expect alt-e --expect alt-s)
 
-    if [ "${lines[0]}" = ctrl-s ]; then
+    if [ "${lines[0]}" = alt-s ]; then
         #ctrl_s_sel=$(echo ${lines[1]} | fzf --height $fzf_height)
         ctrl_s_words="$(echo "${lines[1]}" | sed  -e 's![[:space:]]\+!\n!g' -e 's![-/_=]\+!\n!g' | sort -u)"
         fzf_with_options "$ctrl_s_words"
@@ -57,7 +57,7 @@ fzf_with_options() {
         tmp_file="/tmp/.fzf.edit"
         echo ${lines[1]} > $tmp_file 
         #edit_selection="${lines[1]}"
-        tmux set-env edit-selection "${lines[1]}"
+        tmux set-env edit-selection "$lines[1]}"
         #nvim $tmp_file
         #echo -n $(cat $tmp_file) | tmux load-buffer -
         #rm $tmp_file
@@ -93,3 +93,5 @@ init_file="$HOME/.init.fzf-popup-selector"
 [ -f "$init_file" ] && source "$init_file"
 fzf_with_options "$(fzf.default.command.pl)"
 # echo tmux.conf echo tmux-popup-fzf-selector.sh 
+# fzf_with_options paste-buffer load-buffer
+# paste-buffer 
