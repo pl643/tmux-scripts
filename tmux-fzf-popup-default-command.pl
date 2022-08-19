@@ -1,7 +1,32 @@
 #!/usr/bin/env perl
 
-$epoc_start = time();
+# fzf defaults to just the 'find' command. This is my fzf input for my tmux environment
+#   - fd . ~ || find ~
+#   - contents of nvim open files
+#   - contents of tmux pane history 
+#   - split all words found by spaces /@,\+()
 
+# time how long it takes the script to run
+$epoc_start = time();  # $epoc_stop = time()  at bottom
+
+# https://www.reddit.com/r/neovim/comments/w6fxhu/opened_files_in_neovim_from_the_command_line/
+# lsof | grep nvim| awk '{ print $9 }' |grep .swp|cut -f2- -d%| sed -e 's!%!/!g' -e 's!.swp!!' -e 's!^!/!'
+foreach(`lsof`) {
+    if(/$ENV{USER}/ && /nvim/ && /\s.+?(%.+\.swp)/) {
+        $fname=$1;
+        $fname=~s!\%!/!g;
+        $fname=~s!\.swp!!;
+        #print "$fname\n";
+        !$nvimfiles{$fname}++;
+    }
+}
+
+foreach(keys %nvimfiles) {
+    foreach(`cat $_`) {
+        next if /^\s*$/;
+        !$nvimfilescontents{$_}++;
+    }
+}
 # gets tmux history of just panes in current window (Default)
 $tmux_list_panes="tmux list-panes";
  
@@ -105,6 +130,9 @@ foreach (keys %words_by_symbol) {
         !$strip_symbol_words{$_}++;
     }
 }
+foreach(keys %nvimfilescontents) {
+    !$ALL{$_}++
+}
 foreach(keys %strip_symbol_words) {
     !$ALL{$_}++
 }
@@ -122,16 +150,15 @@ foreach(keys %bash_commands) {
     !$ALL{$_}++
 }
 
+# install fd, so much faster!
 $fdlocation=`which fd`;
+chomp $fdlocation;
 if ( -e "$fdlocation" ) {
-    print "db126: found fd\n";
-}
-if($exit_code=0) {
-    $lsfiles="fd";
+    $files_cmd='fd . ~';
 } else {
-    $lsfiles="find ~ -not -path '*/.*'"
+    $files_cmd="find ~ -not -path '*/.*'"
 }
-foreach(`$lsfiles`) {
+foreach(`$files_cmd`) {
     chomp;
     !$ALL{$_}++;
     $file_count++;
@@ -142,9 +169,7 @@ foreach(keys %ALL) {
 }
 
 $epoc_stop = time();
-printf "lsfiles: %s\n", $lsfiles;
-printf "file count: %s\n", $file_count;
-printf "total time: %s\n", $epoc_stop - $epoc_start;
-printf "total lines: %d\n", scalar keys %ALL;
-my $output=`which fd`;
-print "db126: ec: $? output $output\n";
+printf "file cmd:         %s\n",t;
+printf "file count:       %s\n", $file_count;
+printf "script run time:  %s\n", $epoc_stop - $epoc_start;
+printf "total lines:      %d\n", scalar keys %ALL;
