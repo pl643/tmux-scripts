@@ -36,7 +36,7 @@ fzf_with_options() {
     pane_lines=${size% *}
     let fzf_height=$(($pane_lines - 1))
     echo ""
-    readarray -t lines < <(echo "$1" | fzf --height=$fzf_height --expect alt-c --expect alt-f --expect alt-v --expect alt-e --expect alt-s)
+    readarray -t lines < <(echo "$1" | fzf --height=$fzf_height --info=inline --expect alt-c --expect alt-f --expect alt-v --expect alt-e --expect alt-s)
 
     if [ "${lines[0]}" = alt-s ]; then
         #ctrl_s_sel=$(echo ${lines[1]} | fzf --height $fzf_height)
