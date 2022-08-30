@@ -91,7 +91,7 @@ fzf_with_options() {
 # INIT - define custom fzf_contents
 init_file="$HOME/.init.fzf-popup-selector"
 [ -f "$init_file" ] && source "$init_file"
-fzf_with_options "$(fzf.default.command.pl)"
+fzf_with_options "$(~/repo/tmux-scripts/tmux-fzf-popup-default-command.pl)"
 # echo tmux.conf echo tmux-popup-fzf-selector.sh 
 # fzf_with_options paste-buffer load-buffer
 # paste-buffer 
