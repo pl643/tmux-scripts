@@ -6,6 +6,7 @@
 #   - contents of tmux pane history 
 #   - split all words found by spaces /@,\+()
 
+use Time::HiRes qw(time);
 # time how long it takes the script to run
 $epoc_start = time();  # $epoc_stop = time()  at bottom
 
@@ -169,7 +170,7 @@ foreach(keys %ALL) {
 }
 
 $epoc_stop = time();
-printf "file cmd:         %s\n",t;
+printf "file cmd:         %s\n", $files_cmd;
 printf "file count:       %s\n", $file_count;
-printf "script run time:  %s\n", $epoc_stop - $epoc_start;
+printf "script run time:  %3.3f seconds\n", $epoc_stop - $epoc_start;
 printf "total lines:      %d\n", scalar keys %ALL;
