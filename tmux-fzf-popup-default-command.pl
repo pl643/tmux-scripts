@@ -1,15 +1,28 @@
 #!/usr/bin/env perl
 
-# fzf defaults to just the 'find' command. This perl script adds the following beside just 'find':
+# fzf defaults to just the 'find' command. This perl script adds the following strings to fzf:
+#   - ~/.bash_history
 #   - fd . ~ || find ~
 #   - contents of nvim open files
 #   - contents of tmux pane history 
+#   - ~/.fzf-default-strings contents
 #   - split all words found by spaces /@,\+()
+#      - allows for recall variables/words with minimum editing
 
 use Time::HiRes qw(time);
-# time how long it takes the script to run
-$epoc_start = time();  # $epoc_stop = time()  at bottom
 
+# time how long it takes the script to run
+$epoc_start = time();  # $epoc_stop = time()  <- bottom "$epoc_stop - $epoc_start";
+
+# ~/.bash_history
+
+foreach(`cat ~/.bash_history`) {
+    next if /^\s*$/;
+    chomp;
+    !$bash_history{$_}++;
+}
+
+# - contents of nvim open files
 # https://www.reddit.com/r/neovim/comments/w6fxhu/opened_files_in_neovim_from_the_command_line/
 # lsof | grep nvim| awk '{ print $9 }' |grep .swp|cut -f2- -d%| sed -e 's!%!/!g' -e 's!.swp!!' -e 's!^!/!'
 foreach(`lsof`) {
@@ -21,13 +34,13 @@ foreach(`lsof`) {
         !$nvimfiles{$fname}++;
     }
 }
-
 foreach(keys %nvimfiles) {
     foreach(`cat $_`) {
         next if /^\s*$/;
         !$nvimfilescontents{$_}++;
     }
 }
+
 # gets tmux history of just panes in current window (Default)
 $tmux_list_panes="tmux list-panes";
  
@@ -40,7 +53,7 @@ foreach(`tmux list-panes | cut -f 7 -d " "`) {
     foreach(`tmux capture-pane -t $pane_number -pS -`) {
         next if /^\s*$/;
         !$lines{$_}++;
-        $line_count++;
+        $pane_lines_count++;
         if(/(".+")/) {
             !$quotes{"$1"}++;
             #print "2\" $1\n";
@@ -52,10 +65,12 @@ foreach(`tmux list-panes | cut -f 7 -d " "`) {
     }
 }
 
+# - contents of tmux pane history
 # remove dupe words and store in %words_by_space
 foreach $line (keys %lines) {
-    if ( $line =~ /^$bash_prompt.+?\s(\S.+)/ ) {
-        # print "DB38: $1\n";
+    # finds default Ubuntu/Rocky prompts and store command for recall
+    if ( $line =~ /^\S+@\S+[\s|:]\S+[$|#]\s+(\S.+)/ ) {
+        #print "DB59: $1\n";
         !$bash_commands{"$1"}++;
     }
     foreach(split /\s+/, $line) {
@@ -131,27 +146,30 @@ foreach (keys %words_by_symbol) {
         !$strip_symbol_words{$_}++;
     }
 }
+foreach(keys %bash_history) {
+    !$ALL{$_}++;
+}
 foreach(keys %nvimfilescontents) {
-    !$ALL{$_}++
+    !$ALL{$_}++;
 }
 foreach(keys %strip_symbol_words) {
-    !$ALL{$_}++
+    !$ALL{$_}++;
 }
 foreach(keys %words_by_symbol) {
-    !$ALL{$_}++
+    !$ALL{$_}++;
 }
 foreach(keys %words_by_space) {
-    !$ALL{$_}++
+    !$ALL{$_}++;
 }
 foreach(keys %lines) {
     chomp;
-    !$ALL{$_}++
+    !$ALL{$_}++;
 }
 foreach(keys %bash_commands) {
-    !$ALL{$_}++
+    !$ALL{$_}++;
 }
 
-# install fd, so much faster!
+# uses fd if found, but will fall back to find
 $fdlocation=`which fd`;
 chomp $fdlocation;
 if ( -e "$fdlocation" ) {
@@ -169,8 +187,9 @@ foreach(keys %ALL) {
     print "$_\n"
 }
 
+printf "file cmd:              %s\n", $files_cmd;
+printf "file count:            %d\n", $file_count;
+printf "pane lines count:      %d\n", $pane_lines_count;
+printf "total unique lines:    %d\n", scalar keys %ALL;
 $epoc_stop = time();
-printf "file cmd:         %s\n", $files_cmd;
-printf "file count:       %s\n", $file_count;
-printf "script run time:  %3.3f seconds\n", $epoc_stop - $epoc_start;
-printf "total lines:      %d\n", scalar keys %ALL;
+printf "script run time:       %3.3f seconds\n", $epoc_stop - $epoc_start;
