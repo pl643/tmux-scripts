@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# fzf defaults to just the 'find' command. This is my fzf input for my tmux environment
+# fzf defaults to just the 'find' command. This perl script adds the following beside just 'find':
 #   - fd . ~ || find ~
 #   - contents of nvim open files
 #   - contents of tmux pane history 
