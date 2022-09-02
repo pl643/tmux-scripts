@@ -14,12 +14,18 @@ use Time::HiRes qw(time);
 # time how long it takes the script to run
 $epoc_start = time();  # $epoc_stop = time()  <- bottom "$epoc_stop - $epoc_start";
 
-# ~/.bash_history
-
+# - ~/.bash_history
 foreach(`cat ~/.bash_history`) {
     next if /^\s*$/;
     chomp;
     !$bash_history{$_}++;
+}
+
+# - ~/.fzf-default-strings
+foreach(`cat ~/.fzf-default-strings`) {
+    next if /^\s*$/;
+    chomp;
+    !$fzf_default_strings{$_}++;
 }
 
 # - contents of nvim open files
@@ -145,6 +151,10 @@ foreach (keys %words_by_symbol) {
         next if /^\s*$/;
         !$strip_symbol_words{$_}++;
     }
+}
+foreach(keys %fzf_default_strings) {
+    print "DB156: $_";
+    !$ALL{$_}++;
 }
 foreach(keys %bash_history) {
     !$ALL{$_}++;
