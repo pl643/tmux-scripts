@@ -1,0 +1,257 @@
+# tmux-mapleader
+# usage: tmux-mapleader [ -m map ]  [ "single-charactor" ]
+
+# motivation: provide a vim mapleader like workflow in tmux, where a leader 
+#   key and a few letters can be mapped to perform an action
+
+# requires: tmux version > 3.2 for the tmux display-popup command
+# tmux_mapleader must be executable and in PATH
+
+# Example ~/.tmux.conf binding:
+#   bind-key -n ,   popup -E -h98% 'tmux_mapleader ","'
+#               ^                                   ^
+#               ^                                   ^
+#    The above example binds the , (comma) key to activate this script in a popup window.
+#       To produce "," press ",,".
+
+realpath="$(realpath $0)"                                                           
+# restart script in a popup
+if [ "$1" != "--no-popup" ]; then 
+    echo "" >> /tmp/db
+    echo start >> /tmp/db 
+    echo $(date) >> /tmp/db
+    echo db22: \$1: $1 realpath: $realpath>> /tmp/db
+    set -x
+    # rerun script with poup
+    tmux popup -E "/bin/bash $realpath --no-popup"
+    echo 25 ec: $? >> /tmp/db
+    #read -n1 "waiting"
+    # script to run after 
+    after_script="/tmp/.after_script"
+    if [ -f $after_script ]; then
+        bash "$after_script"
+        rm "$after_script"
+    fi
+    #echo DB32: realpath: $realpath
+    #read -n1 "waiting"
+    exit 0
+fi 
+
+# Defaults to ',' comma
+#[ -z "$1" ] || mapleader_character="$1"
+[ -z "$mapleader_character" ] || mapleader_character=','
+[ -z "$EDITOR" ] || EDITOR="nvim -u ~/df/tmux.init.vim"
+
+map_leader_full_path="$PWD$0"
+map_leader_basename=$(basename $map_leader_full_path)
+#echo DB24: map_leader_full_path: $map_leader_full_path base: $map_leader_basename
+
+# check if tmux-mapleader is mapped
+#if tmux list-keys | grep -q $map_leader_basename; then
+#        tmux bind-key -n "$mapleader_character" display-popup -E -T "tmux-mapleader $mapleader_character" -h "80%" -w "80%" "bash $map_leader_full_path \"$mapleader_character\""
+#fi
+
+# Personalize your mappings by putting the below lines in ~/.init.tmux-mapleader
+#   mapleader_table='
+#   0           select window 0 ;; tmux select-window -t 0
+#   '
+
+# use init_tmux_mapleader file to customize
+init_tmux_mapleader="$HOME/.init.tmux-mapleader"
+[ -f "$init_tmux_mapleader" ] && source "$init_tmux_mapleader"
+[ -z "$mapleader_table" ] && mapleader_table='
+
+Mapping     Description     ;; Command(s)
+-------     --------------- ;; -----------------------
+
+0           select window 0 ;; tmux select-window -t 0
+1           select window 1 ;; tmux select-window -t 1
+2           select window 2 ;; tmux select-window -t 2
+3           select window 3 ;; tmux select-window -t 3
+4           select window 4 ;; tmux select-window -t 4
+5           select window 5 ;; tmux select-window -t 5
+6           select window 6 ;; tmux select-window -t 6
+7           select window 7 ;; tmux select-window -t 7
+8           select window 8 ;; tmux select-window -t 8
+9           select window 9 ;; tmux select-window -t 9
+
+bp          break-pane / use jb to join ;; tmux break-pane
+c1          change 1st word (vi) ;; tmux send-keys Escape "0ce"
+c2          change 2nd word (vi) ;; tmux send-keys Escape "0wce"
+c3          change 3nd word (vi) ;; tmux send-keys Escape "0wwce"
+cl          cycle-layout    ;; tmux bind-key -T CYCLE_LAYOUT Space "next-layout ; switch-client -T CYCLE_LAYOUT" ; tmux switch-client -T CYCLE_LAYOUT
+ct          chose-tree      ;; tmux choose-tree -Z
+cw          chose-window    ;; tmux choose-window -Z
+dm          disable tmux-mapleader ;; echo disable tmux-mapleader
+dp          display pane ;; tmux run-shell "tmux display-pane" ; echo display-pane; sleep 3
+dt          detach tmux     ;; echo dt
+ei          edit mapleader init ;; $EDITOR "$HOME/.init.tmux-mapleader"
+f           start selector ;; echo tmux-popup-fzf-selector.sh > /tmp/.after_script
+Fe	        fzf edit file  ;;  fe=$(find . -type f | fzf); [ -z $fe ] || tmux new-window -n "$fe" "$EDITOR $fe"
+Ff          fzf paste selection ;; ff=$(find . -type f | fzf); [ -z $ff ] || tmux set-buffer "$ff" \; paste-buffer
+Fl          fzf view list-keys   ;; tmux list-keys | fzf
+Fs          fzf session selection ;;
+Fw          fzf window selection ;; tmux select-window -t $(tmux list-windows | sed "s/:/;/" | grep -v "\bbash\b" | fzf -1 | cut -f 1 -d \;)
+jb          join broken pane in -v ;; tmux join-pane -h -s $(tmux list-windows|tail -1|cut -f1 -d:)
+jp          join pane ;; echo; read -p "enter source window number: " win_no ; tmux join-pane -h -s $win_no
+kp          kill pane ;; tmux kill-pane
+kw          kill window ;; tmux kill-window
+lh          layout even horizontally ;; tmux select-layout even-vertical
+lv          layout even veritcally ;; tmux select-layout even-horizontal
+lw          last window ;; tmux last-window
+np          next pane ;; tmux select-pane -t :.+
+ns          new session detached;; tmux new-session -d
+nw          next window ;; tmux next-window
+pw          previous window ;; tmux previous-window
+rp          resize pane ( hjkl-5x HJKL-1x 0-9% ) ;; bash ~/resize.popup
+rP          rename pane title ;; echo; read -p "enter pane title: " title; tmux select-pane -T "$title";
+rs          rename session ;; echo ; read -p "rename session: " name; tmux rename-session "$name"
+rw          rename window ;; echo ; read -p "rename window: " name; tmux rename-window $name
+sW          swap window ;; echo; read -p "enter window number to swap: " swap_number ; tmux swap-window -t $swap_number
+scn         switch-client next ;; tmux switch-client -n
+scp         switch-client previous ;; tmux switch-client -p
+sh          split horizontally ;; tmux split -h
+spj         swap pane down ;; tmux swap-pane -D
+spk         swap pane up ;; tmux swap-pane -U
+st          source ~/.tmux.conf ;; tmux source ~/.tmux.conf
+sv          split vertically ;; tmux split -v
+sw<space>   sort windows ;; sort_windows_by_name
+swh         swap window left ;;
+swl         swap window right ;;
+tsb         toggle status bar ;; tmux set -g status
+tsp         status bar p osition [top/bottom] ;;
+tsP         toggle synchronize-panes ;; tmux setw synchronize-panes
+tz          toggle zoom ;; tmux resize-pane -Z
+ul          unbind mapleader ;; unbind_mapleader
+tz          toggle zoom ;; tmux resize-pane -Z
+
+'
+# Arrays:
+#    Commands - contains commands to be evaulated adter mactch
+#    Desciptions - Contains descript of mappings
+declare -A Commands Descriptions
+
+# Processing mapleader_table with about 60 mappings takes about 5 seconds on a raspberry pi 3
+#   using sed/awk/cut. So we process only when files are changed
+create_array_from_table() {
+	printf "\nChange detected, creating cache file: $cached_array_file\n"
+	IFS=$'\n'
+	for line in $mapleader_table; do
+		mappings_descriptions=$(echo "$line" | awk -F';;' '{print $1}')
+		commands=$(echo "$line" | awk -F';;' '{print $2}' |  sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+		map=$(echo $mappings_descriptions | awk '{print $1}')
+		description="$(echo "$mappings_descriptions" | cut -f 2- -d ' '| sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+		if [ "$map" != "" ] && [ "$map" != "Mapping" ] && [ "$map" != "-------" ]; then
+			Commands[$map]="$commands"
+			Descriptions[$map]="$description"
+			echo Commands[$map]=\'"$commands"\'   >> "$cached_array_file"
+			echo Descriptions[$map]=\'"$description"\'  >> "$cached_array_file"
+		fi
+	done
+}
+
+resize_pane_table_binding() {
+	# below tmux binding need for <leader>rp (resize-pane)
+	# https://www.reddit.com/r/tmux/comments/6920do/til_custom_keytables_with_switchclient_t/
+	tmux bind-key -T RESIZE K "resize-pane -U; switch-client -T RESIZE"
+	tmux bind-key -T RESIZE J "resize-pane -D; switch-client -T RESIZE"
+	tmux bind-key -T RESIZE H "resize-pane -L; switch-client -T RESIZE"
+	tmux bind-key -T RESIZE L "resize-pane -R; switch-client -T RESIZE"
+	tmux bind-key -T RESIZE k "resize-pane -U 5; switch-client -T RESIZE"
+	tmux bind-key -T RESIZE j "resize-pane -D 5; switch-client -T RESIZE"
+	tmux bind-key -T RESIZE h "resize-pane -L 5; switch-client -T RESIZE"
+	tmux bind-key -T RESIZE l "resize-pane -R 5; switch-client -T RESIZE"
+	tmux bind-key -T RESIZE !  run "tmux resize-pane -y $(($(tmux display-message -p "#{window_height}") \
+	     * 10 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE \@ run "tmux resize-pane -y $(($(tmux display-message -p "#{window_height}") \
+             * 20 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE \# run "tmux resize-pane -y $(($(tmux display-message -p "#{window_height}") \
+	     * 30 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE $  run "tmux resize-pane -y $(($(tmux display-message -p "#{window_height}") \
+	     * 40 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE \% run "tmux resize-pane -y $(($(tmux display-message -p "#{window_height}") \
+	     * 50 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE ^  run "tmux resize-pane -y $(($(tmux display-message -p "#{window_height}") \
+             * 60 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE \& run "tmux resize-pane -y $(($(tmux display-message -p "#{window_height}") \
+             * 70 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE \* run "tmux resize-pane -y $(($(tmux display-message -p "#{window_height}") \
+             * 80 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE \( run "tmux resize-pane -y $(($(tmux display-message -p "#{window_height}") \
+             * 90 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE 1 run "tmux resize-pane -x $(($(tmux display-message -p "#{window_width}") \
+             * 10 / 100)); tmux switch-client -T RESIZE"  
+        tmux bind-key -T RESIZE 2 run "tmux resize-pane -x $(($(tmux display-message -p "#{window_width}") \
+     * 20 / 100)); tmux switch-client -T RESIZE"
+        tmux bind-key -T RESIZE 3 run "tmux resize-pane -x $(($(tmux display-message -p "#{window_width}") \
+	     * 30 / 100)); tmux switch-client -T RESIZE"  
+        tmux bind-key -T RESIZE 4 run "tmux resize-pane -x $(($(tmux display-message -p "#{window_width}") \
+             * 40 / 100)); tmux switch-client -T RESIZE"  
+        tmux bind-key -T RESIZE 5 run "tmux resize-pane -x $(($(tmux display-message -p "#{window_width}") \
+             * 50 / 100)); tmux switch-client -T RESIZE"  
+        tmux bind-key -T RESIZE 6 run "tmux resize-pane -x $(($(tmux display-message -p "#{window_width}") \
+             * 60 / 100)); tmux switch-client -T RESIZE"  
+        tmux bind-key -T RESIZE 7 run "tmux resize-pane -x $(($(tmux display-message -p "#{window_width}") \
+             * 70 / 100)); tmux switch-client -T RESIZE"  
+        tmux bind-key -T RESIZE 8 run "tmux resize-pane -x $(($(tmux display-message -p "#{window_width}") \
+             * 80 / 100)); tmux switch-client -T RESIZE"  
+        tmux bind-key -T RESIZE 9 run "tmux resize-pane -x $(($(tmux display-message -p "#{window_width}") \
+             * 90 / 100)); tmux switch-client -T RESIZE"
+	tmux switch-client -T RESIZE
+}
+
+sort_windows_by_name() {
+	active_window_name=$(tmux lsw -F '#{window_name}#{window_active}' | sed -n 's|^\(.*\)1$|\1|p')
+	number_of_windows=$(tmux list-windows|wc -l)
+	for (( c=1; c<=$number_of_windows; c++ )); do
+		current_window_index=$(tmux list-windows|sort -k2|head -$c|tail -1|cut -f1 -d:)
+		[ $current_window_index -ne $c ] && tmux swap-window -s $current_window_index -t $c
+	done
+	new_window_number_of_active_window=$(tmux list-window|grep $active_window_name|cut -f1 -d:)
+	tmux select-window -t "$new_window_number_of_active_window"
+	exit 0
+}
+
+## START ##
+
+# processing the mappings
+cached_array_file="$HOME/.cache.tmux.mapleader"
+[ -f "$cached_array_file" ] && [ "$cached_array_file" -ot "$0" ] && rm "$cached_array_file"
+[ -f "$cached_array_file" ] && [ "$cached_array_file" -ot "$init_tmux_mapleader" ] && rm "$cached_array_file"
+[ -f "$cached_array_file" ] || create_array_from_table && source "$cached_array_file"
+
+for map_keys in "${!Commands[@]}"; do
+	NL=$'\n'
+	[ -z "$mapped_keys" ] && mapped_keys="$map_keys" || mapped_keys="$mapped_keys${NL}$map_keys"
+	[ -z "$all_descriptions" ]   && all_descriptions="$map_keys: ${Descriptions["$map_keys"]}" || \
+		all_descriptions="$all_descriptions${NL}$map_keys: ${Descriptions["$map_keys"]}"
+	# [ -z $longest_description ] && longest_description=$(echo "${Descriptions["$map_keys"]}" | wc -c >> /tmp/wc)
+	#description_count=${#Descriptions[@]}
+done
+
+clear
+echo "$all_descriptions" | sort -u | column
+printf "\nmapleader: $mapleader_character  | <Esc>: Cancel  | key(s) pressed: "
+
+while [ true ]; do
+	IFS="" read -n1 c
+    mapleader_character=","
+	[ "$c" = "$mapleader_character" ] && tmux send-keys "$mapleader_character" && exit
+	#[ "$c" = "," ] && tmux send-keys "$mapleader_character" && exit
+	[ "$c" = " " ] && c="<space>"
+	[ -z "$letters_typed" ] && letters_typed=$c || letters_typed="$letters_typed$c"
+	count=$(echo "$mapped_keys" | grep "^$letters_typed" | wc -l)
+	[ $count -eq 0 ] && exit
+	if [ $count -eq 1 ]; then
+		matched="$(echo "$mapped_keys" | grep "^$letters_typed")"
+		if [ "$letters_typed" = "$matched" ]; then
+			echo
+			eval "${Commands[$matched]}"
+			# display non-zero exit code on failure
+			ec=$?; [ $ec -ne 0 ] && read -s -n 1 -p "exit code: $ec running: ${Commands[$matched]}"
+			# hack to run popup after command finish
+            # read -1n "db 247 w/raiting"
+			exit
+		fi
+	fi
+done
