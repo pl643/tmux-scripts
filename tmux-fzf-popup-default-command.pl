@@ -153,7 +153,7 @@ foreach (keys %words_by_symbol) {
     }
 }
 foreach(keys %fzf_default_strings) {
-    print "DB156: $_";
+    # print "DB156: $_";
     !$ALL{$_}++;
 }
 foreach(keys %bash_history) {
